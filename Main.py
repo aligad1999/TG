@@ -2,6 +2,9 @@ import pandas as pd
 import streamlit as st
 from io import BytesIO
 
+# Required sheet names
+REQUIRED_SHEETS = ['دليل الاصناف EN', 'زمالك', 'معادي', 'جاردن', 'force instock']
+
 # Function to clean stock sheet
 def clean_stock_sheet(xls, sheet_name):
     df = pd.read_excel(xls, sheet_name=sheet_name, skiprows=2)
@@ -17,7 +20,17 @@ def main():
 
     if uploaded_file is not None:
         # Read the uploaded Excel file
-        xls = pd.ExcelFile(uploaded_file)
+        try:
+            xls = pd.ExcelFile(uploaded_file)
+        except Exception as e:
+            st.error(f"Error reading the file: {e}")
+            return
+
+        # Validate required sheets
+        missing_sheets = [sheet for sheet in REQUIRED_SHEETS if sheet not in xls.sheet_names]
+        if missing_sheets:
+            st.error(f"The uploaded file is missing the following required sheets: {', '.join(missing_sheets)}. Please add them and reupload the file.")
+            return
 
         # Process stock data
         try:
