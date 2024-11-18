@@ -13,6 +13,7 @@ def clean_stock_sheet(xls, sheet_name):
 
 # Streamlit app
 def main():
+    st.image("logo.png", width=200)  # Replace "logo.png" with the path to your logo file
     st.title("The Grocer Stock Data Processor")
 
     # File uploader
