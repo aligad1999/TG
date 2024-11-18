@@ -84,10 +84,10 @@ def main():
             store_mapping = {
                 'معادي': 'Maadi',
                 'MDI': 'Maadi',
-                'زمالك': 'zamalek',
-                'ZMK': 'zamalek',
-                'جاردن': 'Garden',
-                'GRD': 'Garden'
+                'زمالك': 'Zamalek',
+                'ZMK': 'Zamalek',
+                'جاردن': 'Garden 8',
+                'GRD': 'Garden 8'
             }
 
             final_data['Store'] = final_data['Store'].replace(store_mapping)
