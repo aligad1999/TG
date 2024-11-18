@@ -10,7 +10,7 @@ def clean_stock_sheet(xls, sheet_name):
 
 # Streamlit app
 def main():
-    st.title("Excel Stock Data Processor")
+    st.title("The Grocer Stock Data Processor")
 
     # File uploader
     uploaded_file = st.file_uploader("Upload your Excel file", type="xlsx")
