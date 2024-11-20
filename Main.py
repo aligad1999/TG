@@ -45,18 +45,25 @@ def main():
             # Combine stock data
             stock_data = pd.concat([zamalek_data, maadi_data, garden_data], ignore_index=True)
 
-            # Map stock to binary (1 if stock >= 1, else 0)
-            stock_data['STOCK'] = (stock_data['Balance Qty Pieces'] >= 1).astype(int)
-
-            # Load and clean the main sheet
+            # Load the main sheet with correct column mapping
             main_sheet = pd.read_excel(xls, sheet_name='دليل الاصناف EN', skiprows=3)
             main_sheet = main_sheet.rename(columns={
-                'Micro Category :': 'Item Code',
-                'Unnamed: 2': 'BarCode',
-                'Unnamed: 5': 'Item Name',
-                'Unnamed: 9': 'Retail Price'
+                'Unnamed: 1': 'BarCode',  # Column B
+                'Unnamed: 3': 'Description',  # Column D
+                'Unnamed: 4': 'Price',  # Column E
+                'Unnamed: 5': 'Stock',  # Column F
+                'Unnamed: 6': 'Discounted Price',  # Column G
+                'Micro Category :': 'Item Code'
             })
-            main_sheet = main_sheet[['Item Code', 'BarCode', 'Item Name', 'Retail Price']]
+
+            # Remove 'plus' from BarCode
+            main_sheet['BarCode'] = main_sheet['BarCode'].astype(str).str.replace('plus', '', case=False).str.strip()
+
+            # If Discounted Price is empty, use Price
+            main_sheet['Discounted Price'] = main_sheet['Discounted Price'].fillna(main_sheet['Price'])
+
+            # Select and clean required columns
+            main_sheet = main_sheet[['Item Code', 'BarCode', 'Description', 'Price', 'Discounted Price', 'Stock']]
 
             # Load the force instock sheet
             force_instock = pd.read_excel(xls, sheet_name='force instock')
@@ -69,9 +76,8 @@ def main():
                 if not matching_item.empty:
                     forced_stock_data.append({
                         'Item Code': matching_item.iloc[0]['Item Code'],
-                        'Balance Qty Pieces': 1,
-                        'Store': row['Store'],
-                        'STOCK': 1
+                        'Stock': 1,
+                        'Store': row['Store']
                     })
 
             # Convert forced stock data to DataFrame
@@ -89,10 +95,7 @@ def main():
             main_sheet['Item Code'] = main_sheet['Item Code'].astype(str).str.strip()
 
             # Merge main sheet with stock data
-            final_data = stock_data.merge(main_sheet, on='Item Code', how='left')
-
-            # Rearrange columns
-            final_data = final_data[['Store', 'Item Code', 'BarCode', 'Item Name', 'Retail Price', 'STOCK']]
+            final_data = main_sheet.merge(stock_data[['Store', 'Item Code']], on='Item Code', how='left')
 
             # Map the Store names to standardized values
             store_mapping = {
@@ -105,6 +108,9 @@ def main():
             }
 
             final_data['Store'] = final_data['Store'].replace(store_mapping)
+
+            # Rearrange columns to match exact mapping specification
+            final_data = final_data[['Store', 'Item Code', 'BarCode', 'Description', 'Price', 'Discounted Price', 'Stock']]
 
             # Prepare data for download
             output = BytesIO()
