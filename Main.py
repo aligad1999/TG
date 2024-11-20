@@ -99,8 +99,7 @@ def main():
 
             # Rearrange columns to match the correct mapping
             final_data = final_data[[
-                'Store', 'Item Code', 'BarCode', 'Item Name', 
-                'Retail Price', 'Discounted Price', 'STOCK'
+                'Store', 'BarCode','Item Code', 'Item Name','Retail Price','STOCK','Discounted Price'
             ]]
 
             # Map the Store names to standardized values
