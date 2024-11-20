@@ -58,6 +58,12 @@ def main():
             })
             main_sheet = main_sheet[['Item Code', 'BarCode', 'Item Name', 'Retail Price']]
 
+            # Fix BarCode to remove "+" if present
+            main_sheet['BarCode'] = main_sheet['BarCode'].astype(str).str.replace('+', '', regex=False)
+
+            # Add Discounted Price column as equal to Retail Price
+            main_sheet['Discounted Price'] = main_sheet['Retail Price']
+
             # Load the force instock sheet
             force_instock = pd.read_excel(xls, sheet_name='force instock')
             force_instock['Item No'] = force_instock['Item No'].astype(str).str.strip()
@@ -91,8 +97,11 @@ def main():
             # Merge main sheet with stock data
             final_data = stock_data.merge(main_sheet, on='Item Code', how='left')
 
-            # Rearrange columns
-            final_data = final_data[['Store', 'Item Code', 'BarCode', 'Item Name', 'Retail Price', 'STOCK']]
+            # Rearrange columns to match the correct mapping
+            final_data = final_data[[
+                'Store', 'Item Code', 'BarCode', 'Item Name', 
+                'Retail Price', 'Discounted Price', 'STOCK'
+            ]]
 
             # Map the Store names to standardized values
             store_mapping = {
