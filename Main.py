@@ -45,56 +45,38 @@ def main():
             # Combine stock data
             stock_data = pd.concat([zamalek_data, maadi_data, garden_data], ignore_index=True)
 
-            # Map stock to binary (1 if stock >= 1, else 0)
-            stock_data['STOCK'] = (stock_data['Balance Qty Pieces'] >= 1).astype(int)
-
-            # Load and clean the main sheet
+            # Load the main sheet
             main_sheet = pd.read_excel(xls, sheet_name='دليل الاصناف EN', skiprows=3)
             main_sheet = main_sheet.rename(columns={
                 'Micro Category :': 'Item Code',
-                'Unnamed: 2': 'BarCode',
-                'Unnamed: 5': 'Item Name',
-                'Unnamed: 9': 'Retail Price'
+                'Unnamed: 1': 'BarCode',
+                'Unnamed: 3': 'Item Name',
+                'Unnamed: 4': 'Retail Price',
+                'Unnamed: 5': 'STOCK',
+                'Unnamed: 6': 'Discounted Price'
             })
-            main_sheet = main_sheet[['Item Code', 'BarCode', 'Item Name', 'Retail Price']]
+
+            # Process BarCode column by removing 'plus'
+            main_sheet['BarCode'] = main_sheet['BarCode'].apply(lambda x: str(x).replace('plus', '').strip() if pd.notnull(x) else x)
+
+            # Standardize Item Code
+            stock_data['Item Code'] = stock_data['Item Code'].astype(str).str.strip()
+            main_sheet['Item Code'] = main_sheet['Item Code'].astype(str).str.strip()
+
+            # Map stock (1 if stock >= 1, else 0)
+            main_sheet['STOCK'] = (main_sheet['STOCK'] >= 1).astype(int)
+
+            # Replace empty Discounted Price with Retail Price
+            main_sheet['Discounted Price'] = main_sheet['Discounted Price'].fillna(main_sheet['Retail Price'])
 
             # Load the force instock sheet
             force_instock = pd.read_excel(xls, sheet_name='force instock')
             force_instock['Item No'] = force_instock['Item No'].astype(str).str.strip()
 
-            # Create records for forced instock items
-            forced_stock_data = []
-            for _, row in force_instock.iterrows():
-                matching_item = main_sheet[main_sheet['Item Code'].astype(str).str.strip() == row['Item No']]
-                if not matching_item.empty:
-                    forced_stock_data.append({
-                        'Item Code': matching_item.iloc[0]['Item Code'],
-                        'Balance Qty Pieces': 1,
-                        'Store': row['Store'],
-                        'STOCK': 1
-                    })
-
-            # Convert forced stock data to DataFrame
-            forced_stock_df = pd.DataFrame(forced_stock_data)
-
-            # Combine regular stock data with forced stock data
-            if forced_stock_data:
-                stock_data = pd.concat([stock_data, forced_stock_df], ignore_index=True)
-
-            # Drop duplicates keeping the forced stock entries
-            stock_data = stock_data.drop_duplicates(subset=['Store', 'Item Code'], keep='last')
-
-            # Standardize Item Code to ensure consistent formatting
-            stock_data['Item Code'] = stock_data['Item Code'].astype(str).str.strip()
-            main_sheet['Item Code'] = main_sheet['Item Code'].astype(str).str.strip()
-
-            # Merge main sheet with stock data
+            # Merge stock data with main sheet
             final_data = stock_data.merge(main_sheet, on='Item Code', how='left')
 
-            # Rearrange columns
-            final_data = final_data[['Store', 'Item Code', 'BarCode', 'Item Name', 'Retail Price', 'STOCK']]
-
-            # Map the Store names to standardized values
+            # Map store names
             store_mapping = {
                 'معادي': 'Maadi',
                 'MDI': 'Maadi',
@@ -103,8 +85,17 @@ def main():
                 'جاردن': 'Garden 8',
                 'GRD': 'Garden 8'
             }
-
             final_data['Store'] = final_data['Store'].replace(store_mapping)
+
+            # Select and rename columns to match exact mapping
+            final_data = final_data[[
+                'Store', 
+                'BarCode', 
+                'Item Name', 
+                'Retail Price', 
+                'Discounted Price', 
+                'STOCK'
+            ]]
 
             # Prepare data for download
             output = BytesIO()
