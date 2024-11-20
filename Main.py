@@ -49,8 +49,8 @@ def main():
             main_sheet = pd.read_excel(xls, sheet_name='دليل الاصناف EN', skiprows=3)
             main_sheet = main_sheet.rename(columns={
                 'Unnamed: 1': 'BarCode',  # Column B
-                'Unnamed: 3': 'Description',  # Column D
-                'Unnamed: 4': 'Price',  # Column E
+                'Unnamed: 3': 'Item Name',  # Column D
+                'Unnamed: 4': 'Retail Price',  # Column E
                 'Unnamed: 5': 'Stock',  # Column F
                 'Unnamed: 6': 'Discounted Price',  # Column G
                 'Micro Category :': 'Item Code'
@@ -59,11 +59,11 @@ def main():
             # Remove 'plus' from BarCode
             main_sheet['BarCode'] = main_sheet['BarCode'].astype(str).str.replace('plus', '', case=False).str.strip()
 
-            # If Discounted Price is empty, use Price
-            main_sheet['Discounted Price'] = main_sheet['Discounted Price'].fillna(main_sheet['Price'])
+            # If Discounted Retail Price is empty, use Retail Price
+            main_sheet['Discounted Price'] = main_sheet['Discounted Price'].fillna(main_sheet['Retail Price'])
 
             # Select and clean required columns
-            main_sheet = main_sheet[['Item Code', 'BarCode', 'Description', 'Price', 'Discounted Price', 'Stock']]
+            main_sheet = main_sheet[['Item Code', 'BarCode', 'Item Name', 'Retail Price', 'Discounted Price', 'Stock']]
 
             # Load the force instock sheet
             force_instock = pd.read_excel(xls, sheet_name='force instock')
@@ -110,7 +110,7 @@ def main():
             final_data['Store'] = final_data['Store'].replace(store_mapping)
 
             # Rearrange columns to match exact mapping specification
-            final_data = final_data[['Store', 'Item Code', 'BarCode', 'Description', 'Price', 'Discounted Price', 'Stock']]
+            final_data = final_data[['Store', 'Item Code', 'BarCode', 'Item Name', 'Retail Price', 'Discounted Price', 'Stock']]
 
             # Prepare data for download
             output = BytesIO()
